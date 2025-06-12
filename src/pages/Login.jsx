@@ -13,7 +13,6 @@ export default function Login() {
   useEffect(() => {
     const u = currentUser();
     if (u) {
-      // 이미 로그인된 상태라면 역할별 리다이렉트
       if (u.resetRequired) return nav('/change-password', { replace: true });
       if (u.role === 'head')      return nav('/admin',            { replace: true });
       if (u.role === 'site')      return nav('/site',             { replace: true });
@@ -36,7 +35,6 @@ export default function Login() {
     else if (u.role === 'partner') nav(`/board/${u.uid}`);
   };
 
-  // 스타일
   const container = {
     minHeight: '100vh',
     display: 'flex',
@@ -46,7 +44,7 @@ export default function Login() {
     padding: '24px',
   };
   const card = {
-    width: '90%',
+    width: '100%',
     maxWidth: '360px',
     background: '#FFF',
     borderRadius: '16px',
@@ -55,7 +53,7 @@ export default function Login() {
     textAlign: 'center',
   };
   const inputStyle = {
-    width: '100%',
+    width: '90%',
     padding: '12px',
     marginBottom: '16px',
     border: '1px solid #CCC',
@@ -78,8 +76,12 @@ export default function Login() {
   return (
     <div style={container}>
       <div style={card}>
-        {/* public/logo.png 에 파일을 넣고 src="/logo.png" 로 불러옵니다 */}
-        <img src="/logo.png" alt="회사 로고" style={{ width: '230px', marginBottom: '16px' }} />
+        {/* 로고 경로에 반드시 base url을 포함 */}
+        <img
+          src={`${import.meta.env.BASE_URL}logo.png`}
+          alt="회사 로고"
+          style={{ width: '230px', marginBottom: '16px' }}
+        />
         <p style={{ color: '#3C3C4399', marginBottom: '24px' }}>
           자이 C&A TBM 앱 서비스에 오신 것을 환영합니다.
         </p>

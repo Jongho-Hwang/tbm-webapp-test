@@ -1,5 +1,3 @@
-// File: src/pages/AdminDashboard.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { currentUser, logout, hashPw } from '../services/localAuth';

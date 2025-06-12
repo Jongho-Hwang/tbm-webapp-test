@@ -1,5 +1,3 @@
-// File: src/pages/ChangePassword.jsx
-
 import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { currentUser, logout, changePassword } from '../services/localAuth';
@@ -71,7 +69,6 @@ export default function ChangePassword() {
       <h1 style={{ fontSize: '24px', fontWeight: 600, margin: '0 24px 24px' }}>
         비밀번호 변경
       </h1>
-
       <form onSubmit={handleSubmit} style={inputWrapperStyle}>
         <label style={{ fontSize: '14px', fontWeight: 500 }}>현재 비밀번호</label>
         <input

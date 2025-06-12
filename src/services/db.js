@@ -1,89 +1,79 @@
-import CryptoJS from "crypto-js";
-import { openDB } from "idb";
+// src/services/db.js
+import { db } from './firebase';
+import {
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+} from 'firebase/firestore/lite';
 
-const DB_NAME    = "tbm-app";
-const DB_VERSION = 12;
+/* ───────── 사용자 관리 ───────── */
+export const addUser = async (user) =>
+  setDoc(doc(db, 'users', user.uid), user);
 
-export const dbPromise = openDB(DB_NAME, DB_VERSION, {
-  async upgrade(db, oldV, newV, tx) {
-    if (!db.objectStoreNames.contains("users")) {
-      const s = db.createObjectStore("users", { keyPath: "uid" });
-      s.createIndex("role", "role");
-    }
-    const usersStore = tx.objectStore("users");
-    if (!(await usersStore.get("head-001"))) {
-      await usersStore.put({
-        uid:  "head-001",
-        name: "최고관리자",
-        role: "head",
-        pwHash: CryptoJS.SHA256("admin123").toString(CryptoJS.enc.Hex),
-        resetRequired: false,
-      });
-    }
+export const getUser = async (uid) => {
+  const snap = await getDoc(doc(db, 'users', uid));
+  return snap.exists() ? snap.data() : null;
+};
 
-    if (!db.objectStoreNames.contains("notices")) {
-      const n = db.createObjectStore("notices", { keyPath: "id" });
-      n.createIndex("level",     "level");
-      n.createIndex("siteId",    "siteId");
-      n.createIndex("partnerId", "partnerId");
-      n.createIndex("createdAt", "createdAt");
-    }
-    if (!db.objectStoreNames.contains("acks")) {
-      const a = db.createObjectStore("acks", { keyPath: "id" });
-      a.createIndex("noticeId",  "noticeId");
-      a.createIndex("siteId",    "siteId");
-      a.createIndex("partnerId", "partnerId");
-    }
-    if (!db.objectStoreNames.contains("tbms")) {
-      const t = db.createObjectStore("tbms", { keyPath: "id" });
-      t.createIndex("date",      "date");
-      t.createIndex("siteId",    "siteId");
-      t.createIndex("partnerId", "partnerId");
-    }
-  }
-});
+export const getByRole = async (role) => {
+  const q = query(collection(db, 'users'), where('role', '==', role));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => d.data());
+};
 
-/* users */
-export const addUser             = async (u) => (await dbPromise).put("users", u);
-export const getUser             = async (id) => (await dbPromise).get("users", id);
-export const getByRole           = async (r)  => (await dbPromise).getAllFromIndex("users","role",r);
-export const userExists          = async (uid) => !!(await getUser(uid));
-export const makeUniqueUid       = async (base) => {
+export const userExists = async (uid) => !!(await getUser(uid));
+
+export const makeUniqueUid = async (base) => {
   let uid = base, i = 1;
   while (await userExists(uid)) uid = `${base}-${i++}`;
   return uid;
 };
-export const deleteUserCascade   = async (uid) => {
-  const db = await dbPromise;
-  await db.delete("users", uid);
-  const allNot = await db.getAll("notices");
-  await Promise.all(
-    allNot
-      .filter((n) => n.siteId === uid || n.partnerId === uid)
-      .map((n) => db.delete("notices", n.id))
-  );
-};
 
-/* notices */
-export const saveNotice    = async (n) => (await dbPromise).put("notices", n);
-export const deleteNotice  = async (id) => (await dbPromise).delete("notices", id);
-export const fetchBoardNotices = async ({ siteId = null, partnerId = null }) => {
-  const all = await (await dbPromise).getAll("notices");
-  return all
-    .filter((n) => {
-      if (n.level === "head")    return true;
-      if (n.level === "site")    return n.siteId === siteId;
-      if (n.level === "partner") return n.partnerId === partnerId;
-      return false;
-    })
+export const deleteUserCascade = async (uid) =>
+  deleteDoc(doc(db, 'users', uid));   // 연관 데이터 삭제는 필요 시 확장
+
+/* ───────── 공지 ───────── */
+export const saveNotice   = (notice) => setDoc(doc(db, 'notices', notice.id), notice);
+export const deleteNotice = (id)     => deleteDoc(doc(db, 'notices', id));
+
+export const fetchBoardNotices = async ({
+  level,
+  siteId     = null,
+  partnerId  = null,
+}) => {
+  const col = collection(db, 'notices');
+  let q;
+
+  if (level === 'head') {
+    q = query(col, where('level', '==', 'head'));
+  } else if (level === 'site') {
+    q = query(col, where('level', '==', 'site'), where('siteId', '==', siteId));
+  } else if (level === 'partner') {
+    q = query(
+      col,
+      where('level', '==', 'partner'),
+      where('partnerId', '==', partnerId)
+    );
+  } else {
+    q = col;
+  }
+
+  const snap = await getDocs(q);
+  return snap.docs
+    .map((d) => d.data())
     .sort((a, b) => b.createdAt - a.createdAt);
 };
 
-/* acks */
-export const addAck      = async (ack) => (await dbPromise).put("acks", ack);
-export const getAck      = async (noticeId, partnerId) =>
-  (await dbPromise).get("acks", `${noticeId}_${partnerId}`);
+/* ───────── 공지 읽음(Ack) ───────── */
+export const addAck = (ack) =>
+  setDoc(doc(db, 'acks', ack.id), ack);
 
-/* tbms index 사용 예시 (필요 시) */
-// export const getAcksBySite = async (siteId) =>
-//   (await dbPromise).getAllFromIndex("acks", "siteId", siteId);
+export const getAck = async (noticeId, partnerId) => {
+  const snap = await getDoc(doc(db, 'acks', `${noticeId}_${partnerId}`));
+  return snap.exists() ? snap.data() : null;
+};

@@ -1,5 +1,4 @@
-// File: src/services/tbmService.js
-
+// src/services/tbmService.js
 import { db } from './firebase';
 import {
   collection,
@@ -9,26 +8,23 @@ import {
   getDocs,
   updateDoc,
   doc,
-} from 'firebase/firestore';
+} from 'firebase/firestore/lite';
 
-export async function saveTbmRecord(data) {
-  await addDoc(collection(db, 'tbms'), data);
-}
+/* TBM 기록 저장 */
+export const saveTbmRecord = (data) =>
+  addDoc(collection(db, 'tbms'), data);
 
-export async function fetchTbmByPartnerDate(partnerId, date) {
+/* 협력사·날짜별 TBM 조회(최신 1건) */
+export const fetchTbmByPartnerDate = async (partnerId, date) => {
   const q = query(
     collection(db, 'tbms'),
     where('partnerId', '==', partnerId),
     where('date', '==', date)
   );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => ({ ...d.data(), id: d.id }));
-}
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+};
 
-export async function updateTbmRecord(id, data) {
-  await updateDoc(doc(db, 'tbms', id), data);
-}
-
-export async function fetchTbmStatusRecords() {
-  // ... (생략)
-}
+/* TBM 기록 수정 */
+export const updateTbmRecord = (id, data) =>
+  updateDoc(doc(db, 'tbms', id), data);

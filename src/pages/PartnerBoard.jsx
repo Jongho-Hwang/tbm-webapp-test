@@ -18,7 +18,7 @@ export default function PartnerBoard() {
     return <Navigate to="/login" replace />;
   }
 
-  // 스타일 (최고 관리자 페이지와 동일)
+  // 스타일
   const headerBar = {
     display: 'flex',
     justifyContent: 'flex-end',
@@ -41,8 +41,10 @@ export default function PartnerBoard() {
   const [notices, setNotices] = useState([]);
   useEffect(() => {
     (async () => {
+      // Firestore에서 siteId, partnerId 기준 공지 가져오기
       const list = await fetchBoardNotices({ siteId: me.siteId, partnerId: me.uid });
       setNotices(list);
+      // 읽음표시 기록 (Ack)
       for (const n of list) {
         const ackId = `${n.id}_${me.uid}`;
         if (!(await getAck(n.id, me.uid))) {
@@ -145,7 +147,7 @@ export default function PartnerBoard() {
     setEditMode(true);
   };
 
-  // 버튼 추가 스타일
+  // 스타일 보완
   const tbmButtonStyle = { ...buttonStyle, marginBottom: '12px' };
   const listStyle = { listStyle: 'none', padding: 0, marginBottom: '16px' };
   const listItem = { display: 'flex', alignItems: 'center', margin: '0 24px 8px 24px' };
@@ -153,7 +155,7 @@ export default function PartnerBoard() {
 
   return (
     <div>
-      {/* 오른쪽 상단 버튼 영역(최고 관리자 페이지와 동일) */}
+      {/* 오른쪽 상단 버튼 영역 */}
       <div style={headerBar}>
         <button style={buttonStyle} onClick={() => nav('/change-password')}>
           비밀번호 변경
