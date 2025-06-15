@@ -1,32 +1,38 @@
 // vite.config.js
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react-swc';   // ← SWC 버전 사용
+import { defineConfig }     from 'vite';
+import react                from '@vitejs/plugin-react-swc';
 
-export default defineConfig({
-  plugins: [
-    react({
-      tsDecorators: false,      // 필요 시 true
-      // 아래 babel 옵션은 JS 파일(.js) 안에 JSX 를 쓸 때만 필요
-      babel: {
-        parserOpts: {
-          plugins: ['jsx'],
-        },
-      },
-    }),
-  ],
+/* -------------------------------------------------
+ *  VITE_DEPLOY_TARGET 환경변수로 배포 대상 구분
+ *    - local/dev            : undefined  (npm run dev)
+ *    - GitHub Pages build   : github     (npm run build:gh)
+ *    - Firebase build       : firebase   (npm run build)
+ * ------------------------------------------------- */
+export default defineConfig(({ mode }) => {
+  // .env, cross-env, npm script 등으로 주입
+  const target = process.env.VITE_DEPLOY_TARGET || mode;   // fallback
 
-  // JSX 확장자를 확실히 인식하도록 설정
-  resolve: {
-    extensions: ['.js', '.jsx', '.ts', '.tsx'],
-  },
+  const isGitHub = target === 'github';   // true → /tbm-webapp/ 로 빌드
+  return {
+    plugins: [
+      react({
+        tsDecorators: false,
+        babel: { parserOpts: { plugins: ['jsx'] } },
+      }),
+    ],
 
-  /*  🔖 Firebase Hosting(또는 GitHub Pages)에서
-      /index.html 로 SPA 리라이트를 쓰는 구조면
-      base는 루트(/)가 맞습니다.  */
-  base: '/',
+    resolve: {
+      extensions: ['.js', '.jsx', '.ts', '.tsx'],
+    },
 
-  /* dev 서버 포트 등 추가 옵션이 필요하면 여기에 */
-  server: {
-    port: 5173,
-  },
+    /* ◼︎ 가장 중요: 정적 자산의 루트 경로 */
+    base: isGitHub ? '/tbm-webapp/' : '/',
+
+    server: { port: 5173 },
+
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
+    },
+  };
 });
