@@ -1,20 +1,14 @@
 // src/services/tbmService.js
-// TBM 관련 모든 작업을 Firestore(Lite) 직접 호출로 구현
-
+// TBM 관련 Firestore 호출
 import { db } from './firebase';
 import {
-  collection,
-  addDoc,
-  updateDoc,
-  doc,
-  query,
-  where,
-  getDocs,
+  collection, setDoc, updateDoc, doc,
+  query, where, getDocs,
 } from 'firebase/firestore/lite';
 
-/* TBM 기록 저장 */
+/* TBM 기록 저장 (ID 직접 지정) */
 export const saveTbmRecord = (data) =>
-  addDoc(collection(db, 'tbms'), data);
+  setDoc(doc(db, 'tbms', data.id), data);
 
 /* TBM 수정 */
 export const updateTbmRecord = (id, data) =>
@@ -25,8 +19,8 @@ export const fetchTbmByPartnerDate = async (partnerId, date) => {
   const q = query(
     collection(db, 'tbms'),
     where('partnerId', '==', partnerId),
-    where('date',      '==', date)
+    where('date',      '==', date),
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+  return snap.docs.map(d => ({ ...d.data(), id: d.id }));
 };

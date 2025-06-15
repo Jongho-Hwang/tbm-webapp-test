@@ -1,49 +1,49 @@
-// File: src/App.jsx
-import React from "react";
+// src/App.jsx
+import React from 'react';
 import {
-  BrowserRouter as Router,
+  BrowserRouter,
   Routes,
   Route,
   Navigate,
-} from "react-router-dom";
+} from 'react-router-dom';
 
-import { currentUser } from "./services/localAuth";
+import { currentUser } from './services/localAuth';
 
-/* ───────── 기존 페이지 ───────── */
-import Login                from "./pages/Login.jsx";
-import ChangePassword       from "./pages/ChangePassword.jsx";
-import AdminDashboard       from "./pages/AdminDashboard.jsx";
-import SiteManager          from "./pages/SiteManager.jsx";
-import PartnerBoard         from "./pages/PartnerBoard.jsx";
-import PartnerNoticeManage  from "./pages/PartnerNoticeManage.jsx";
-import TBMStatus            from "./pages/TBMStatus.jsx";
-
-/* ───────── 새로 추가되는 근로자(Worker) 페이지 ───────── */
-import WorkerPage           from "./pages/WorkerPage.jsx";
+/* ───────── 페이지 컴포넌트 ───────── */
+import Login               from './pages/Login.jsx';
+import ChangePassword      from './pages/ChangePassword.jsx';
+import AdminDashboard      from './pages/AdminDashboard.jsx';
+import SiteManager         from './pages/SiteManager.jsx';
+import PartnerBoard        from './pages/PartnerBoard.jsx';
+import PartnerNoticeManage from './pages/PartnerNoticeManage.jsx';
+import TBMStatus           from './pages/TBMStatus.jsx';
+import WorkerPage          from './pages/WorkerPage.jsx';
 
 /* ───────── 인증 전용 래퍼 ───────── */
 function PrivateRoute({ roles, children }) {
-  const user = currentUser();
-  if (!user || (roles && !roles.includes(user.role))) {
+  const u = currentUser();
+  if (!u || (roles && !roles.includes(u.role))) {
     return <Navigate to="/login" replace />;
   }
   return children;
 }
 
 export default function App() {
-  return (
-    <Router>
-      <Routes>
-        {/* ───── 공용(비로그인) 라우트 ───── */}
-        <Route path="/login" element={<Login />} />
-        {/* 근로자용 QR 진입 경로 ― 인증 없이 접속 */}
-        <Route path="/worker/:partnerId" element={<WorkerPage />} />
+  /* vite.config.js의 base 값과 동일해야 합니다 */
+  const basename = import.meta.env.BASE_URL;
 
-        {/* ───── 인증 필요한 라우트 ───── */}
+  return (
+    <BrowserRouter basename={basename}>
+      <Routes>
+        {/* ───── 공용(비로그인) ───── */}
+        <Route path="/login"               element={<Login />} />
+        <Route path="/worker/:partnerId"   element={<WorkerPage />} />
+
+        {/* ───── 인증 필요 ───── */}
         <Route
           path="/change-password"
           element={
-            <PrivateRoute roles={["head", "site", "partner"]}>
+            <PrivateRoute roles={['head', 'site', 'partner']}>
               <ChangePassword />
             </PrivateRoute>
           }
@@ -52,7 +52,7 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <PrivateRoute roles={["head"]}>
+            <PrivateRoute roles={['head']}>
               <AdminDashboard />
             </PrivateRoute>
           }
@@ -61,7 +61,7 @@ export default function App() {
         <Route
           path="/site"
           element={
-            <PrivateRoute roles={["site"]}>
+            <PrivateRoute roles={['site']}>
               <SiteManager />
             </PrivateRoute>
           }
@@ -70,7 +70,7 @@ export default function App() {
         <Route
           path="/board/:partnerId"
           element={
-            <PrivateRoute roles={["partner"]}>
+            <PrivateRoute roles={['partner']}>
               <PartnerBoard />
             </PrivateRoute>
           }
@@ -79,25 +79,24 @@ export default function App() {
         <Route
           path="/board/:partnerId/manage"
           element={
-            <PrivateRoute roles={["partner"]}>
+            <PrivateRoute roles={['partner']}>
               <PartnerNoticeManage />
             </PrivateRoute>
           }
         />
 
-        {/* TBM 제출현황 (최고‧현장 관리자) */}
         <Route
           path="/tbm-status"
           element={
-            <PrivateRoute roles={["head", "site"]}>
+            <PrivateRoute roles={['head', 'site']}>
               <TBMStatus />
             </PrivateRoute>
           }
         />
 
-        {/* ───── 기본: 로그인으로 리다이렉트 ───── */}
+        {/* ───── 기본: 로그인 ───── */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
